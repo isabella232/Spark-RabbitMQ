@@ -124,6 +124,11 @@ class Consumer(val channel: Channel, params: Map[String, String]) extends Loggin
       channel.close()
   }
 
+  def abort(): Unit = {
+    if(channel.isOpen)
+      channel.abort()
+  }
+
   private def declareQueue(
                             queue: String,
                             exchangeAndRouting: ExchangeAndRouting = ExchangeAndRouting(),
