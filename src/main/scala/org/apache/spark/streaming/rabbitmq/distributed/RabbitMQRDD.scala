@@ -15,6 +15,7 @@
  */
 package org.apache.spark.streaming.rabbitmq.distributed
 
+import akka.actor.ActorSystem
 import com.rabbitmq.client.ConsumerCancelledException
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.partial.{BoundedDouble, CountEvaluator, PartialResult}
@@ -224,6 +225,7 @@ class RabbitMQRDD[R: ClassTag](
         case Failure(e: TimeoutException) =>
           log.info(s"Timeout when trying to close Channel, aborting Channel")
           consumer.abort()
+          Consumer.closeConnections()
         case Failure(e) => throw new SparkException(s"Error when closing Channel with error: ${e.getLocalizedMessage}")
       }
     }
