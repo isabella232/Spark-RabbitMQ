@@ -26,6 +26,7 @@ import org.apache.spark.util.{NextIterator, Utils}
 import org.apache.spark.{Accumulator, Logging, Partition, SparkContext, SparkException, TaskContext}
 
 import scala.collection.JavaConversions._
+import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -217,7 +218,16 @@ class RabbitMQRDD[R: ClassTag](
       log.info(s"******* Received $numMessages messages by Partition : ${part.index}  before close Channel ******")
       //Close the scheduler and the channel in the consumer
       scheduleProcess.cancel()
-      consumer.close()
+      Try {
+        consumer.close()
+      } match {
+        case Success(_) => log.info(s"Successfully closed Channel")
+        case Failure(e: TimeoutException) =>
+          log.info(s"Timeout when trying to close Channel, aborting Channel")
+          consumer.abort()
+          Consumer.closeConnections()
+        case Failure(e) => throw new SparkException(s"Error when closing Channel with error: ${e.getLocalizedMessage}")
+      }
     }
 
     private def finishIterationAndReturn(): R = {
