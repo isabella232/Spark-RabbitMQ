@@ -245,11 +245,13 @@ object Consumer extends Logging with ConsumerParamsUtils {
   private def getChannel(params: Map[String, String]): Try[Channel] = {
     val addresses = getAddresses(params)
     val addressesKey = addresses.mkString(",")
-    val connection = connections.getOrElse(addressesKey, addConnection(addressesKey, addresses))
 
     log.debug("Creating new channel")
 
-    Try(connection.createChannel)
+    Try{
+      val connection = connections.getOrElse(addressesKey, addConnection(addressesKey, addresses))
+      connection.createChannel
+    }
   }
 
   private def addConnection(key: String, addresses: Array[Address]) : Connection = {
